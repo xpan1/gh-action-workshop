@@ -1,0 +1,48 @@
+#' This workflow renders README.qmd to "github flavored markdown" (GFM) 
+#' README.md.  GFM renders nicely when viewed on GitHub, although it does not
+#' have all the full features of HTML output.  It is useful for sharing simple
+#' reports without having to worry about publishing a website.  But, if you're
+#' interested in that, see the validation_report.yaml example.
+#' 
+on:
+  workflow_dispatch
+  # push:
+  #   branches: main
+  # pull_request:
+  #   branches: main
+
+name: 04-Render README
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    env:
+      RENV_CONFIG_PAK_ENABLED: TRUE
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+      
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "renv" #use the same version of R recorded in renv.lock
+      
+      - name: Install R packages
+        uses: r-lib/actions/setup-renv@v2
+        
+      - name: Render
+        uses: quarto-dev/quarto-actions/render@v2
+        with:
+          to: gfm
+          path: README.qmd
+      
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: Render README
+          

@@ -1,0 +1,46 @@
+#' This example renders and publishes a Quarto document.  In this case, the 
+#' Quarto document contains R code that we want to re-run, so the action also 
+#' installs R and R package dependencies like in the validate.yaml workflow.
+#' Upon creating a repo from this template, this action will initially fail.
+#' You need to run `quarto publish gh-pages docs/report.qmd` on your command 
+#' line once before it will work.
+#' Read more: https://quarto.org/docs/publishing/github-pages.html
+#' Copied and modified from: https://github.com/quarto-dev/quarto-actions/blob/main/examples/quarto-publish-example.yml
+on:
+  workflow_dispatch
+  # push:
+  #   branches: main
+  # pull_request:
+  #   branches: main
+
+name: 05-Publish Validation Report
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    env:
+      RENV_CONFIG_PAK_ENABLED: TRUE
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+      
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "renv" #use the same version of R recorded in renv.lock
+      
+      - name: Install R packages
+        uses: r-lib/actions/setup-renv@v2
+        
+      - name: Render and Publish
+        uses: quarto-dev/quarto-actions/publish@v2
+        with:
+          target: gh-pages
+          path: docs/report.qmd
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # this secret is always available for github actions

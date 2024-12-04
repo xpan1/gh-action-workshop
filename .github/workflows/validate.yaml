@@ -1,0 +1,42 @@
+#' This example runs an R script that errors when there are problems with the 
+#' data, causing the action to fail on GitHub.  It is set to run when changes 
+#' are pushed to the main branch or when pull requests are made to the main 
+#' branch, but *only* if the data/ folder has changes.  You can also run it with
+#' a button on GitHub (`workflow_dispatch`).  Compared to the simple 
+#' `hello_world.yaml` example, this handles installing R packages differently.  
+#' The required packages are in a renv.lock file created by the `renv` R package.  
+#' This workflow uses the setup-renv action to install those needed packages and 
+#' cache them so this step runs faster subsequent times.  It also uses the `pak` 
+#' package as a back-end to do the actual installing.  `pak` is able to deterine 
+#' any system libraries or command line tools an R package needs and installs 
+#' those as well.
+on:
+  # push:
+  #   branches: main
+  #   paths: 'data/**'
+  # pull_request:
+  #   branches: main
+  #   paths: 'data/**'
+  workflow_dispatch
+
+name: 02-Validate Data
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      RENV_CONFIG_PAK_ENABLED: TRUE #use the `pak` package for installing R packages—it automatically detects and install system dependencies on ubuntu
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup R
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: "renv" #use the same version of R recorded in renv.lock
+      
+      - name: Install R packages
+        uses: r-lib/actions/setup-renv@v2 #uses `renv::restore()`
+        
+      - name: Run validate.R
+        run: |
+          Rscript R/validate.R

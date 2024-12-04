@@ -1,0 +1,65 @@
+---
+title: Data Validation Report
+date: today
+format: html
+---
+
+```{r}
+#| label: setup
+#| include: false
+library(pointblank)
+library(readr)
+library(tidyr)
+library(dplyr)
+```
+
+```{r}
+#| label: wrangle
+#| include: false
+heliconia <- read_csv(here::here("data/heliconia_sample.csv"))
+
+heliconia_tidy <- heliconia |> 
+  select(-starts_with("notes_")) |> 
+  pivot_longer(
+    cols = c(-ranch, -plot, -tag_number, -row, -column),
+    names_sep = "_",
+    names_to = c("variable", "year")
+  ) |> 
+  pivot_wider(names_from = "variable", values_from = "value")
+```
+
+Below is a simple example of a validation report created with `pointblank`.  See the vignette for the [VALID-I workflow](https://rstudio.github.io/pointblank/articles/VALID-I.html) for more.
+
+```{r}
+#| label: validate
+#| echo: false
+
+al <- action_levels(
+  stop_at = 0.01, #error if 1% of rows fail
+  warn_at = 1 #warn if even 1 row fails
+)
+
+heliconia_tidy |> 
+  create_agent(actions = al) |>
+  col_vals_between(
+    columns = shoots,
+    left = 1,
+    right = 20,
+    na_pass = TRUE,
+    actions = al
+  ) |> 
+  col_vals_between(
+    columns = height,
+    left = 0,
+    right = 200,
+    na_pass = TRUE,
+    actions = al
+  ) |> 
+  col_vals_between(
+    columns = infl,
+    left = 0,
+    right = 6,
+    na_pass = TRUE,
+    actions = al
+  ) |> interrogate()
+```
